@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TinyBeacon - Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+</head>
+
+<body>
+    <header>
+        <div class="nav-container">
+            <div class="logo">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M18 10a6 6 0 0 0-12 0v8a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-8Z" />
+                    <path d="M12 14v4" />
+                    <path d="M10 2h4" />
+                    <path d="M12 2v4" />
+                </svg>
+                TinyBeacon Admin
+            </div>
+            <div class="user-badge">
+                <span id="pub-name-display" style="font-weight: 600;">Loading Publisher...</span>
+                <span class="ble-badge" id="pub-ble-display">....</span>
+                <button class="logout-btn" id="logout-btn">Log Out</button>
+            </div>
+        </div>
+    </header>
+
+    <main class="container">
+        <div class="dashboard-grid">
+
+            <!-- SIDEBAR: LIST OF APPS -->
+            <div class="app-sidebar">
+                <div class="sidebar-header">
+                    <h3>Your Apps</h3>
+                    <button class="btn btn-primary" id="open-create-app-btn"
+                        style="padding: 6px 12px; font-size: 0.85rem; width: auto;">+ New App</button>
+                </div>
+                <div class="app-list" id="apps-container">
+                    <!-- Apps dynamically rendered here -->
+                    <div style="text-align: center; color: var(--text-secondary); padding: 20px;">Loading apps...</div>
+                </div>
+            </div>
+
+            <!-- MAIN AREA: APP DETAILS / SETUP / ACTIVATIONS -->
+            <div class="app-detail">
+                <div class="glass-card" id="detail-card" style="display: none;">
+
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 1px solid var(--border-card); padding-bottom: 20px; margin-bottom: 20px;">
+                        <div>
+                            <h2 id="detail-app-name" style="font-size: 1.8rem; margin-bottom: 5px;">App Name</h2>
+                            <p style="font-size: 0.9rem; color: var(--text-secondary);">
+                                BLE Broadcast Target Name: <strong id="detail-ble-full"
+                                    style="color: var(--primary); font-family: monospace;">DEV:XXXX:XXXX</strong>
+                            </p>
+                        </div>
+                        <div style="display: flex; gap: 10px;">
+                            <button class="btn btn-secondary" id="edit-app-btn"
+                                style="padding: 8px 16px; font-size: 0.9rem; width: auto; background: rgba(255,255,255,0.05); color: var(--text-primary); border: 1px solid rgba(255,255,255,0.1);">Edit
+                                App</button>
+                            <button class="btn btn-danger" id="delete-app-btn"
+                                style="padding: 8px 16px; font-size: 0.9rem; width: auto;">Delete App</button>
+                        </div>
+                    </div>
+
+                    <div class="tabs">
+                        <button class="tab-btn active" data-tab="branding">Branding & Fields</button>
+                        <button class="tab-btn" data-tab="activations">Activations History</button>
+                    </div>
+
+                    <!-- TAB 1: BRANDING & FIELDS -->
+                    <div class="tab-content" id="tab-branding">
+                        <div class="branding-preview-container">
+                            <div>
+                                <h3 style="margin-bottom: 15px;">Configuration</h3>
+                                <div class="form-group">
+                                    <label>Primary Brand Color</label>
+                                    <div style="display: flex; gap: 10px; align-items: center;">
+                                        <div id="brand-color-indicator"
+                                            style="width: 36px; height: 36px; border-radius: 8px; border: 1px solid var(--border-card);">
+                                        </div>
+                                        <span id="detail-brand-color">#00b4d8</span>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label>Logo / Brand Icon URL</label>
+                                    <p id="detail-logo-url"
+                                        style="word-break: break-all; color: var(--text-secondary); font-size: 0.95rem;">
+                                        None configured</p>
+                                </div>
+                                <div class="form-group">
+                                    <label>Custom Dynamic Fields (BLE Config Characteristic)</label>
+                                    <div id="detail-fields-list">
+                                        <!-- Fields dynamically rendered here -->
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="branding-preview-card">
+                                <span
+                                    style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-secondary); margin-bottom: 15px; display: block;">Preview</span>
+                                <img id="preview-logo-img" class="preview-logo"
+                                    src="https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=120&auto=format&fit=crop&q=60"
+                                    alt="App Logo"
+                                    onerror="this.src='https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=120&auto=format&fit=crop&q=60'">
+                                <h4 id="preview-app-title" style="margin-bottom: 5px;">My App</h4>
+                                <p style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 15px;"
+                                    id="preview-publisher-title">Acme Inc</p>
+                                <div id="preview-color-bar"
+                                    style="height: 4px; width: 80px; border-radius: 2px; margin: 0 auto 20px;"></div>
+
+                                <div
+                                    style="text-align: left; width: 100%; border: 1px solid var(--border-card); padding: 10px; border-radius: 8px; font-size: 0.75rem; background: rgba(0, 0, 0, 0.2);">
+                                    <span
+                                        style="color: var(--text-secondary); display: block; margin-bottom: 8px;">Dynamic
+                                        field requested:</span>
+                                    <div id="preview-custom-inputs">
+                                        <!-- Custom preview inputs go here -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- TAB 2: ACTIVATIONS -->
+                    <div class="tab-content" id="tab-activations" style="display: none;">
+                        <h3 style="margin-bottom: 15px;">Device Activations</h3>
+                        <div id="activations-table-container">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>MAC Address</th>
+                                        <th>Custom Fields Captured</th>
+                                        <th>Activated At</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="activations-table-body">
+                                    <!-- Dynamic rows -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- EMPTY STATE -->
+                <div class="glass-card empty-state" id="empty-state-card">
+                    <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 2v20" />
+                        <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+                    </svg>
+                    <h2>Select or Create an App</h2>
+                    <p>Configure custom brands and Dynamic BLE Provisioning attributes.</p>
+                </div>
+
+            </div>
+
+        </div>
+    </main>
+
+    <!-- MODAL: CREATE APP -->
+    <div class="modal-backdrop" id="create-app-modal">
+        <div class="glass-card modal">
+            <div class="modal-header">
+                <h3>Create New Smart Provisioning App</h3>
+                <button class="close-modal-btn" id="close-modal-btn">&times;</button>
+            </div>
+
+            <div id="modal-alert-box" class="alert"></div>
+
+            <form id="create-app-form">
+                <div class="form-group">
+                    <label for="app-name">App Name</label>
+                    <input type="text" id="app-name" required placeholder="e.g. Smart Smart Kettle">
+                </div>
+
+                <div class="form-group">
+                    <label for="branding-logo">Logo / Brand Icon URL</label>
+                    <input type="url" id="branding-logo" placeholder="https://example.com/logo.png">
+                </div>
+
+                <div class="form-group">
+                    <label for="branding-color">Primary Branding Color</label>
+                    <input type="color" id="branding-color" value="#00b4d8"
+                        style="height: 50px; padding: 5px; cursor: pointer;">
+                </div>
+
+                <!-- SCHEMA BUILDER -->
+                <div class="form-group">
+                    <label>Dynamic Provisioning Custom Fields (SSID and Password are automatic)</label>
+                    <div class="fields-builder-list" id="fields-builder-list">
+                        <!-- Items populated by JS -->
+                    </div>
+                    <button type="button" class="btn btn-secondary" id="add-builder-field-btn"
+                        style="padding: 6px 12px; font-size: 0.85rem; width: auto;">
+                        + Add Custom Field
+                    </button>
+                </div>
+
+                <button type="submit" class="btn btn-primary" style="margin-top: 20px;">
+                    Save Configuration
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <footer>
+        <div class="footer-container">
+            <div class="footer-copy">
+                &copy; 2026 Tiny Beacon. Open Source (Apache License).
+            </div>
+            <div class="footer-links">
+                <a href="/privacy">Privacy Policy</a>
+                <a href="/terms">Terms & Conditions</a>
+            </div>
+        </div>
+    </footer>
+
+    <script src="app.js"></script>
+</body>
+
+</html>

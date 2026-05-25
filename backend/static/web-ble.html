@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tiny Beacon - Web BLE Provisioner</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
+
+        :root {
+            --bg-dark: #070a13;
+            --bg-card: rgba(15, 23, 42, 0.8);
+            --border-card: rgba(255, 255, 255, 0.08);
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --primary: #06b6d4;
+            --primary-hover: #0891b2;
+            --accent-green: #10b981;
+            --accent-red: #ef4444;
+            --font-heading: 'Outfit', sans-serif;
+            --font-body: 'Plus Jakarta Sans', sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            background-image:
+                radial-gradient(at 0% 0%, rgba(6, 182, 212, 0.15) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(139, 92, 246, 0.15) 0px, transparent 50%);
+            background-attachment: fixed;
+            color: var(--text-primary);
+            font-family: var(--font-body);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 0;
+        }
+
+        .glass-card {
+            background: var(--bg-card);
+            backdrop-filter: blur(16px) saturate(180%);
+            -webkit-backdrop-filter: blur(16px) saturate(180%);
+            border: 1px solid var(--border-card);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 10px 40px 0 rgba(0, 0, 0, 0.5);
+            width: 100%;
+            max-width: 480px;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        h1 {
+            font-family: var(--font-heading);
+            font-size: 2.2rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+            background: linear-gradient(to right, #06b6d4, #8b5cf6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .subtitle {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            margin-bottom: 30px;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, var(--primary), #8b5cf6);
+            border: none;
+            color: white;
+            padding: 14px 28px;
+            font-size: 1rem;
+            font-weight: 600;
+            border-radius: 10px;
+            cursor: pointer;
+            width: 100%;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 15px rgba(6, 182, 212, 0.3);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(6, 182, 212, 0.5);
+        }
+
+        .btn:active {
+            transform: translateY(1px);
+        }
+
+        .btn:disabled {
+            background: #1e293b;
+            color: #64748b;
+            cursor: not-allowed;
+            box-shadow: none;
+            transform: none;
+        }
+
+        /* Status Loader */
+        .status-container {
+            display: none;
+            margin-top: 30px;
+            padding: 20px;
+            border-radius: 12px;
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid var(--border-card);
+            text-align: left;
+        }
+
+        .status-header {
+            font-weight: 600;
+            font-size: 1rem;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .status-log {
+            font-family: monospace;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            max-height: 120px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+
+        /* Form Area */
+        .provision-form {
+            display: none;
+            text-align: left;
+            margin-top: 30px;
+            border-top: 1px solid var(--border-card);
+            padding-top: 25px;
+        }
+
+        .form-group {
+            margin-bottom: 18px;
+        }
+
+        label {
+            display: block;
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+            margin-bottom: 6px;
+        }
+
+        input {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid var(--border-card);
+            border-radius: 8px;
+            padding: 12px 16px;
+            color: var(--text-primary);
+            font-family: var(--font-body);
+            font-size: 0.95rem;
+            transition: all 0.2s ease;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: var(--primary);
+            background: rgba(255, 255, 255, 0.08);
+            box-shadow: 0 0 0 2px rgba(6, 182, 212, 0.2);
+        }
+
+        .branding-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 25px;
+            padding: 15px;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--border-card);
+        }
+
+        .branding-logo {
+            width: 48px;
+            height: 48px;
+            border-radius: 8px;
+            object-fit: cover;
+        }
+
+        .branding-info h3 {
+            font-size: 1.1rem;
+            margin-bottom: 2px;
+        }
+
+        .branding-info span {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+
+        .loader-ring {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            border-top-color: var(--primary);
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        @keyframes scaleUp {
+            from {
+                transform: scale(0.9);
+                opacity: 0;
+            }
+
+            to {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        .success-container {
+            margin-top: 30px;
+            padding: 25px;
+            border-radius: 12px;
+            background: rgba(16, 185, 129, 0.08);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            animation: scaleUp 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .disclaimer {
+            text-align: center;
+            font-size: small;
+            opacity: 1;
+            margin-bottom: 20px;
+            color: white;
+        }
+
+        .disclaimer a {
+            color: white;
+            text-decoration: underline;
+        }
+
+        .main-wrapper {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            padding: 40px 20px;
+        }
+
+        /* Premium Footer styling */
+        footer {
+            border-top: 1px solid var(--border-card);
+            padding: 24px 0;
+            width: 100%;
+            background: rgba(9, 13, 22, 0.4);
+            text-align: center;
+            backdrop-filter: blur(8px);
+            margin-top: auto;
+        }
+
+        .footer-container {
+            max-width: 1200px;
+            width: 90%;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        @media (max-width: 600px) {
+            .footer-container {
+                flex-direction: column;
+                align-items: center;
+                text-align: center;
+            }
+        }
+
+        .footer-links {
+            display: flex;
+            gap: 20px;
+        }
+
+        .footer-links a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.875rem;
+            font-weight: 500;
+            transition: color 0.2s ease;
+        }
+
+        .footer-links a:hover {
+            color: var(--primary);
+        }
+
+        .footer-copy {
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            opacity: 0.8;
+        }
+    </style>
+</head>
+
+<body>
+
+    <main class="main-wrapper">
+        <div class="glass-card">
+            <h1>Tiny Beacon</h1>
+            <p class="subtitle">Web BLE Provisioning</p>
+            <p class="disclaimer">(Check <a
+                    href="https://developer.mozilla.org/en-US/docs/Web/API/Web_Bluetooth_API#browser_compatibility">browser
+                    compatibility</a> before you proceed)</p>
+
+            <!-- SCANNING & STATUS CARD -->
+            <button id="scan-btn" class="btn">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M2 12a10 10 0 0 1 18-6M22 12a10 10 0 0 1-18 6" />
+                    <path d="M12 12m-3 0a3 3 0 1 0 6 0a3 3 0 1 0 -6 0" />
+                </svg>
+                Scan for Devices
+            </button>
+
+            <div id="status-card" class="status-container">
+                <div class="status-header">
+                    <span id="status-title">Status Logging</span>
+                    <span id="status-spinner" class="loader-ring" style="display: none;"></span>
+                </div>
+                <div id="status-log" class="status-log">Ready to scan...</div>
+            </div>
+
+            <!-- DYNAMIC PROVISIONING FORM -->
+            <div id="provision-form" class="provision-form">
+                <div class="branding-header">
+                    <img id="app-logo" class="branding-logo" src="" alt="App Logo">
+                    <div class="branding-info">
+                        <h3 id="app-name">App Name</h3>
+                        <span id="pub-name">by Publisher</span>
+                    </div>
+                </div>
+
+                <form id="fields-form">
+                    <div class="form-group">
+                        <label for="wifi-ssid">WiFi SSID</label>
+                        <input type="text" id="wifi-ssid" required placeholder="Enter WiFi Name">
+                    </div>
+                    <div class="form-group">
+                        <label for="wifi-pass">WiFi Password</label>
+                        <input type="password" id="wifi-pass" placeholder="Enter Password">
+                    </div>
+
+                    <!-- DYNAMIC CUSTOM FIELDS POPULATED HERE -->
+                    <div id="custom-fields-container"></div>
+
+                    <button type="submit" id="submit-btn" class="btn" style="margin-top: 15px;">
+                        Send Configuration
+                    </button>
+                </form>
+            </div>
+
+            <!-- SUCCESS CARD -->
+            <div id="success-card" class="success-container" style="display: none; text-align: center;">
+                <div class="success-icon" style="font-size: 3rem; color: #10b981; margin-bottom: 15px;">
+                    <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                        stroke-linecap="round" stroke-linejoin="round" class="feather feather-check-circle"
+                        style="animation: scaleUp 0.4s ease-out;">
+                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                        <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                    </svg>
+                </div>
+                <h2 style="color: #10b981; margin-bottom: 8px; font-size: 1.4rem; font-weight: 600;">Provisioning
+                    Complete!
+                </h2>
+                <p id="success-message" style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 20px;">
+                    Device
+                    is connected to WiFi and registered successfully.</p>
+                <button id="reset-page-btn" class="btn"
+                    style="background: rgba(255,255,255,0.05); color: var(--text-primary); border: 1px solid rgba(255,255,255,0.1); margin-top: 10px;">
+                    Provision Another Device
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <div class="footer-container">
+            <div class="footer-copy">
+                &copy; 2026 Tiny Beacon. Open Source (Apache License).
+            </div>
+            <div class="footer-links">
+                <a href="/privacy">Privacy Policy</a>
+                <a href="/terms">Terms & Conditions</a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        const SERVICE_UUID = '4a2a1100-c977-440f-90e8-07b194d262d0';
+        const CHAR_WIFI_UUID = '4a2a1101-c977-440f-90e8-07b194d262d0';
+        const CHAR_CUSTOM_UUID = '4a2a1102-c977-440f-90e8-07b194d262d0';
+        const CHAR_STATUS_UUID = '4a2a1103-c977-440f-90e8-07b194d262d0';
+        const CHAR_MAC_UUID = '4a2a1104-c977-440f-90e8-07b194d262d0';
+
+        const BACKEND_URL = window.location.origin + '/api';
+
+        let device = null;
+        let server = null;
+        let service = null;
+        let charWifi = null;
+        let charCustom = null;
+        let charStatus = null;
+        let deviceMac = '30:ae:a4:07:0d:54'; // Fallback MAC address
+
+        let publisherId = '';
+        let appId = '';
+        let resolvedAppUUID = '';
+        let customFieldsSchema = [];
+
+        const scanBtn = document.getElementById('scan-btn');
+        const statusCard = document.getElementById('status-card');
+        const statusLog = document.getElementById('status-log');
+        const statusTitle = document.getElementById('status-title');
+        const statusSpinner = document.getElementById('status-spinner');
+        const formDiv = document.getElementById('provision-form');
+        const fieldsContainer = document.getElementById('custom-fields-container');
+        const successCard = document.getElementById('success-card');
+        const resetPageBtn = document.getElementById('reset-page-btn');
+
+        function log(msg) {
+            statusLog.textContent += '\n' + msg;
+            statusLog.scrollTop = statusLog.scrollHeight;
+        }
+
+        function clearLog() {
+            statusLog.textContent = '';
+        }
+
+        // Web Bluetooth Scan
+        scanBtn.addEventListener('click', async () => {
+            clearLog();
+            statusCard.style.display = 'block';
+            formDiv.style.display = 'none';
+            statusSpinner.style.display = 'inline-block';
+            statusTitle.textContent = 'Scanning...';
+
+            try {
+                log('Requesting Bluetooth device...');
+                device = await navigator.bluetooth.requestDevice({
+                    filters: [
+                        { namePrefix: 'DEV:' }
+                    ],
+                    optionalServices: [SERVICE_UUID]
+                });
+
+                log(`Found Device: ${device.name}`);
+
+                // Parse name "DEV:A1B2:C3D4"
+                const parts = device.name.split(':');
+                if (parts.length < 3) {
+                    throw new Error('Device BLE name has an invalid format. Expected DEV:PUB:APP');
+                }
+
+                publisherId = parts[1].toLowerCase();
+                appId = parts[2].toLowerCase();
+
+                log(`Publisher BLE Hex ID: ${publisherId.toUpperCase()}`);
+                log(`App BLE Hex ID: ${appId.toUpperCase()}`);
+
+                // Resolve branding and config schema from Go API
+                await resolveBranding(publisherId, appId);
+
+                // Connect to BLE Server
+                log('Connecting to GATT Server...');
+                server = await device.gatt.connect();
+                log('GATT connection established.');
+
+                log('Getting service...');
+                service = await server.getPrimaryService(SERVICE_UUID);
+
+                log('Accessing characteristics...');
+                try {
+                    charWifi = await service.getCharacteristic(CHAR_WIFI_UUID);
+                    log('-> Accessed WiFi Config characteristic.');
+                } catch (e) {
+                    log(`-> ERROR accessing WiFi characteristic: ${e.message || e}`);
+                    throw e;
+                }
+
+                try {
+                    charCustom = await service.getCharacteristic(CHAR_CUSTOM_UUID);
+                    log('-> Accessed Custom Config characteristic.');
+                } catch (e) {
+                    log(`-> ERROR accessing Custom characteristic: ${e.message || e}`);
+                    throw e;
+                }
+
+                try {
+                    charStatus = await service.getCharacteristic(CHAR_STATUS_UUID);
+                    log('-> Accessed Status characteristic.');
+                } catch (e) {
+                    log(`-> ERROR accessing Status characteristic: ${e.message || e}`);
+                    throw e;
+                }
+
+                // Setup notifications for status characteristic
+                try {
+                    log('Subscribing to notifications...');
+                    await charStatus.startNotifications();
+                    charStatus.addEventListener('characteristicvaluechanged', handleStatusChange);
+                    log('-> Subscribed to Device status notifications.');
+                } catch (e) {
+                    log(`-> ERROR subscribing to status notifications: ${e.message || e}`);
+                    throw e;
+                }
+
+                // Access and read MAC characteristic
+                try {
+                    log('Accessing MAC characteristic...');
+                    const charMac = await service.getCharacteristic(CHAR_MAC_UUID);
+                    log('-> Accessed MAC characteristic. Reading value...');
+                    const macValue = await charMac.readValue();
+                    const decoder = new TextDecoder('utf-8');
+                    deviceMac = decoder.decode(macValue);
+                    log(`-> Device MAC address: ${deviceMac}`);
+                } catch (e) {
+                    log(`-> Warning: could not read device MAC address: ${e.message || e}. Using fallback: ${deviceMac}`);
+                }
+
+                statusSpinner.style.display = 'none';
+                statusTitle.textContent = 'Connected';
+
+                // Render configuration input form
+                renderForm();
+
+            } catch (err) {
+                log(`ERROR: ${err.message || err}`);
+                statusSpinner.style.display = 'none';
+                statusTitle.textContent = 'Error';
+            }
+        });
+
+        // Query Backend resolve API
+        async function resolveBranding(pubBle, appBle) {
+            log('Resolving app branding details from API...');
+            try {
+                const response = await fetch(`${BACKEND_URL}/resolve?publisher_id=${pubBle}&app_id=${appBle}`);
+                if (!response.ok) {
+                    throw new Error(`Server returned error: ${response.status}`);
+                }
+
+                const data = await response.json();
+                log('Branding details resolved successfully.');
+
+                // Cache info
+                resolvedAppUUID = data.app_id;
+                document.getElementById('app-name').textContent = data.app_name;
+                document.getElementById('pub-name').textContent = `by ${data.publisher_name}`;
+
+                const logo = document.getElementById('app-logo');
+                if (data.branding_logo_url) {
+                    logo.src = data.branding_logo_url;
+                } else {
+                    logo.src = 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=120&auto=format&fit=crop&q=60';
+                }
+
+                // Custom fields schema
+                customFieldsSchema = data.custom_fields_schema || [];
+
+                // Update primary brand styling globally inside card
+                document.querySelector('.glass-card').style.borderColor = data.branding_primary_color || 'var(--primary)';
+                document.getElementById('submit-btn').style.background = data.branding_primary_color || 'var(--primary)';
+
+            } catch (err) {
+                log(`Warning resolving branding: ${err.message}. Using fallback layout.`);
+                document.getElementById('app-name').textContent = `App hex (${appBle.toUpperCase()})`;
+                document.getElementById('pub-name').textContent = `Publisher hex (${pubBle.toUpperCase()})`;
+                document.getElementById('app-logo').src = 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=120&auto=format&fit=crop&q=60';
+                customFieldsSchema = [];
+            }
+        }
+
+        // Render input fields
+        function renderForm() {
+            fieldsContainer.innerHTML = '';
+
+            customFieldsSchema.forEach(field => {
+                const group = document.createElement('div');
+                group.className = 'form-group';
+
+                const label = document.createElement('label');
+                label.textContent = field.label;
+                label.htmlFor = `dyn-${field.name}`;
+
+                const input = document.createElement('input');
+                input.id = `dyn-${field.name}`;
+                input.type = field.type === 'number' ? 'number' : field.type === 'password' ? 'password' : 'text';
+                input.placeholder = `Enter ${field.label.toLowerCase()}`;
+                input.dataset.name = field.name;
+
+                group.appendChild(label);
+                group.appendChild(input);
+                fieldsContainer.appendChild(group);
+            });
+
+            formDiv.style.display = 'block';
+        }
+
+        // Submit to BLE Device
+        document.getElementById('fields-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const ssid = document.getElementById('wifi-ssid').value;
+            const pass = document.getElementById('wifi-pass').value;
+
+            // Build custom fields value payload
+            const customValues = {};
+            customFieldsSchema.forEach(field => {
+                const el = document.getElementById(`dyn-${field.name}`);
+                if (el && el.value) {
+                    customValues[field.name] = field.type === 'number' ? parseFloat(el.value) : el.value;
+                }
+            });
+
+            try {
+                statusCard.style.display = 'block';
+                statusSpinner.style.display = 'inline-block';
+                statusTitle.textContent = 'Provisioning...';
+
+                // Write Custom dynamic fields JSON first (so the ESP has them on connect call)
+                if (customFieldsSchema.length > 0) {
+                    log('Writing custom configurations to characteristic...');
+                    const encoder = new TextEncoder();
+                    const customBytes = encoder.encode(JSON.stringify(customValues));
+                    await charCustom.writeValue(customBytes);
+                    log('Custom values successfully written.');
+                }
+
+                // Write WiFi configuration: payload format "ssid\npassword"
+                log('Writing WiFi configuration...');
+                const encoder = new TextEncoder();
+                const wifiBytes = encoder.encode(`${ssid}\n${pass}`);
+                await charWifi.writeValue(wifiBytes);
+                log('WiFi configuration sent. Waiting for ESP32 response...');
+
+            } catch (err) {
+                log(`ERROR Writing details: ${err.message || err}`);
+                statusSpinner.style.display = 'none';
+                statusTitle.textContent = 'Write Failed';
+            }
+        });
+
+        // Handle Device connection status notify callback
+        function handleStatusChange(event) {
+            const value = event.target.value.getUint8(0);
+            log(`--> BLE STATUS NOTIFICATION RECEIVED: code ${value}`);
+
+            switch (value) {
+                case 1:
+                    statusTitle.textContent = 'Device: Connecting to WiFi';
+                    log('ESP32 is attempting to connect to the router...');
+                    break;
+                case 2:
+                    statusTitle.textContent = 'Provisioned!';
+                    statusSpinner.style.display = 'none';
+                    log('SUCCESS: ESP32 has connected to WiFi successfully.');
+
+                    // Log device activation to Go server
+                    logDeviceActivation(customValuesForActivationLog());
+
+                    // Transition to success state and hide form fields
+                    setTimeout(() => {
+                        scanBtn.style.display = 'none';
+                        statusCard.style.display = 'none';
+                        formDiv.style.display = 'none';
+                        successCard.style.display = 'block';
+                    }, 1200);
+                    break;
+                case 3:
+                    statusTitle.textContent = 'Failed: Invalid Credentials';
+                    statusSpinner.style.display = 'none';
+                    log('ERROR: Connection failed. ESP32 reported bad SSID/password.');
+                    break;
+                case 4:
+                    statusTitle.textContent = 'Failed: Timeout';
+                    statusSpinner.style.display = 'none';
+                    log('ERROR: Connection timed out on ESP32.');
+                    break;
+            }
+        }
+
+        function customValuesForActivationLog() {
+            const values = {};
+            customFieldsSchema.forEach(field => {
+                const el = document.getElementById(`dyn-${field.name}`);
+                if (el && el.value) {
+                    values[field.name] = field.type === 'number' ? parseFloat(el.value) : el.value;
+                }
+            });
+            return values;
+        }
+
+        // Post activation logs to the backend
+        async function logDeviceActivation(customValues) {
+            log('Logging device activation to backend server...');
+
+            try {
+                const response = await fetch(`${BACKEND_URL}/activate`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        app_id: resolvedAppUUID || appId,
+                        device_mac: deviceMac,
+                        custom_fields_values: customValues
+                    })
+                });
+
+                if (response.ok) {
+                    log('Backend activation history updated successfully.');
+                } else {
+                    log(`Warning logging activation: ${response.statusText}`);
+                }
+            } catch (e) {
+                log(`Warning logging activation to server: ${e.message}`);
+            }
+        }
+
+        resetPageBtn.addEventListener('click', () => {
+            window.location.reload();
+        });
+    </script>
+</body>
+
+</html>

@@ -61,7 +61,7 @@ void app_main() {
 We provide two complete, runnable examples under the `firmware/TinyBeacon/examples/` folder.
 
 > [!IMPORTANT]
-> The pre-configured examples in this repository use the default example values: **Publisher ID: `7DFD`** and **App ID: `8CE6`**. Make sure to register an App in your Admin Dashboard using these exact IDs to test the examples immediately without code modifications. For custom integrations, replace them with your own unique IDs.
+> The pre-configured examples in this repository use the default example values: **Publisher ID: `7DFD`** and **App ID: `8CE6`**. Make sure to register an App in the Admin Dashboard and modify them with your own unique IDs.
 
 ### 1. Arduino / PlatformIO (`BasicProvisioning`)
 * **PlatformIO (Recommended)**: Open `firmware/TinyBeacon/examples/BasicProvisioning` in VS Code with PlatformIO installed, and click **Upload**.

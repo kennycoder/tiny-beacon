@@ -203,10 +203,17 @@ $(document).ready(function() {
 
         if (app.branding_logo_url) {
             $('#detail-logo-url').text(app.branding_logo_url);
-            $('#preview-logo-img').attr('src', app.branding_logo_url);
+            $('#preview-logo-img')
+                .off('error')
+                .on('error', function() {
+                    $(this).off('error').attr('src', 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=120&auto=format&fit=crop&q=60');
+                })
+                .attr('src', app.branding_logo_url);
         } else {
             $('#detail-logo-url').text('None configured');
-            $('#preview-logo-img').attr('src', 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=120&auto=format&fit=crop&q=60');
+            $('#preview-logo-img')
+                .off('error')
+                .attr('src', 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=120&auto=format&fit=crop&q=60');
         }
 
         $('#preview-app-title').text(app.name);
